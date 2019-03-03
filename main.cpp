@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	RTScene scene;
 
 	//load a skybox
-	RTSkyBox * sky = new RTSkyBox(&scene, 40.f, new vec3f(0.f, 0.f, 0.f));
+	RTSkyBox * sky = new RTSkyBox(&scene, 30.f, new vec3f(0.f, 0.f, 0.f));
 	sky->loadFile((char*)"bliss_bad.bmp", (char*)"pave.bmp", 1440, 1440);
 
 	//load a mesh into the scene
@@ -66,13 +66,14 @@ int main(int argc, char** argv) {
 	BMPC output(1000, 1000);
 
 	//camera location
-	scene.move(6.f, 6.f, 6.f);
-	scene.point(-1.f, -1.f, -1.f);
-	scene.zoom(1.f);
+	scene.move(5.f, 8.f, 0.f);
+	scene.point(-1.f, -1.5f, 0.f);
+	scene.zoom(1.2f);
 	scene.resize(output.width, output.height);
 
 	//test point light
 	vec3f * lamp = new vec3f(4.f, 6.f, 8.f);
+	float lamp_p = 0.3f;
 
 	for (int u = 0; u < output.width; u++) {
 		for (int v = 0; v < output.height; v++) {
@@ -120,7 +121,7 @@ int main(int argc, char** argv) {
 			float last_refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f);
 			//float d_illum = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) +
 			//							  cos_l * last_color * last_refl;
-			vec3f * d_illum = add(scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v), mul(last_color, last_refl * cos_l));
+			vec3f * d_illum = add(scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v), mul(last_color, last_refl * cos_l * lamp_p));
 
 			//do GI
 			float hit_theta, hit_phi;
