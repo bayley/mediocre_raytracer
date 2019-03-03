@@ -155,7 +155,7 @@ RTSkyBox::RTSkyBox(RTScene * s, float l, vec3f *p) {
 	id = s->record_obj(this);
 }
 
-void RTSkyBox::loadFile(char * sname, char * bname, int w, int h) {
+void RTSkyBox::loadFile(char * sname, char * bname, char * tname, int w, int h) {
 	texw = w; texh = h;
 
 	s_red = (unsigned char*)malloc(w*h);
@@ -165,9 +165,14 @@ void RTSkyBox::loadFile(char * sname, char * bname, int w, int h) {
 	b_red = (unsigned char*)malloc(w*h);
 	b_green = (unsigned char*)malloc(w*h);
 	b_blue = (unsigned char*)malloc(w*h);
+
+	t_red = (unsigned char*)malloc(w*h);
+	t_green = (unsigned char*)malloc(w*h);
+	t_blue = (unsigned char*)malloc(w*h);
 	
 	read_bmp(s_red, s_green, s_blue, w, h, sname);
 	read_bmp(b_red, b_green, b_blue, w, h, bname);
+	read_bmp(t_red, t_green, t_blue, w, h, tname);
 
   Vertex * vertices  = (Vertex*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex), 8);
   Triangle * triangles = (Triangle*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(Triangle), 12);
@@ -241,6 +246,11 @@ vec3f * RTSkyBox::emit(int id, float u, float v) {
 	}
 
 	if (id == 10 || id == 11) {
-		return new vec3f(.88f, .66f, 0.094f);
+		v = 1.f - v;
+		if (id == 11) {u = 1.f - u; v = 1.f - v;}
+		int p = (int)(u*texw); 
+		int q = (int)(v*texh);
+		return new vec3f((float)t_red[q * texw + p] / 255.f, (float)t_green[q * texw + p] / 255.f, (float)t_blue[q * texw + p] / 255.f);
+		//return new vec3f(.88f, .66f, 0.094f);
 	}
 }

@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
 	//load a skybox
 	RTSkyBox * sky = new RTSkyBox(&scene, 30.f, new vec3f(0.f, 0.f, 0.f));
-	sky->loadFile((char*)"bliss_bad.bmp", (char*)"pave.bmp", 1440, 1440);
+	sky->loadFile((char*)"bliss_bad.bmp", (char*)"pave.bmp", (char*)"cloud.bmp", 1440, 1440);
 
 	//load a mesh into the scene
 	RTTriangleMesh * teapot = new RTTriangleMesh(&scene, brdf_lambert, emit_black);
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
 			//do GI
 			float hit_theta, hit_phi;
 			vec3f * g_illum = new vec3f(0.f, 0.f, 0.f);	
-			int n_samples = 10;
+			int n_samples = 128;
 
 			for (int sample = 0; sample < n_samples; sample++) {
 				float backside = last_dir->dot(hit_n) > 0.f ? -1.f : 1.f;

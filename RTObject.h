@@ -74,7 +74,7 @@ class RTSkyBox : public RTObject {
 public:
 	RTSkyBox(RTScene * s, float l, vec3f * p);
 public:
-	void loadFile(char * sname, char * bname, int w, int h);
+	void loadFile(char * sname, char * bname, char * tname, int w, int h);
 public:
 	virtual vec3f * color(int id, float u, float v);
 	virtual vec3f * emit(int id, float u, float v);
