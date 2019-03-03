@@ -1,6 +1,8 @@
 #ifndef __GEOM_H
 #define __GEOM_H
 
+#include <math.h>
+
 class matrix3f;
 class vec3f;
 class Camera;
@@ -27,6 +29,7 @@ public:
 public:
 	float abs() {return sqrtf(x * x + y * y + z * z);}
 	vec3f * cross(vec3f * b);
+	float dot(vec3f * b) {return x * b->x + y * b->y + z * b->z;}
 public:
 	void normalize(); //modifies this vector!
 public:
@@ -35,13 +38,14 @@ public:
 
 class Camera {
 public:
-	Camera(float ex, float ey, float ez, float dx, float dy, float dz, float theta, float d,  int w, int h);
+	Camera(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h);
 public:
 	vec3f * lookat(int x, int y);
 private:
+	void update(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h);
+private:
 	vec3f *eye, *dir;
 	vec3f *u, *v;
-	float dist;
 	int width, height;
 };
 
@@ -49,6 +53,7 @@ private:
 matrix3f * rotation(float theta, int axis);
 vec3f * mul(vec3f * v, float c);
 vec3f * add(vec3f * u, vec3f * v);
+vec3f * sub(vec3f * u, vec3f * v);
 
 //these don't do much, so they are just structs
 typedef struct {

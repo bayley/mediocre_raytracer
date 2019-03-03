@@ -1,6 +1,6 @@
 CXX=g++
-CPPFLAGS=-I.
-DEPS = geom.h bmp.h 
+CPPFLAGS=-O3 -I.
+DEPS = geom.h bmp.h
 OBJ = main.o bmp.o geom.o
 LIBS = -lm -lembree3
 

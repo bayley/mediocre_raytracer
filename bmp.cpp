@@ -116,8 +116,8 @@ void read_bmp(unsigned char *red, unsigned char *green, unsigned char *blue,
 	f = fopen(fname, "rb");
 
 	unsigned char *img = (unsigned char*) malloc(3 * w * h);
-	fread(img, sizeof(unsigned char), 54, f);
-	fread(img, sizeof(unsigned char), 3 * w * h, f);
+	int sz = fread(img, sizeof(unsigned char), 54, f);
+	sz = fread(img, sizeof(unsigned char), 3 * w * h, f);
 	for (int i = 0; i < 3 * w * h; i += 3) {
 		int k = i / 3;
 		red[k] = img[i + 2];
