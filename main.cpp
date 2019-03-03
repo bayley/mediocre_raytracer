@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
 
 	//load a skybox
 	RTSkyBox * sky = new RTSkyBox(&scene, 30.f, new vec3f(0.f, 0.f, 0.f));
-	sky->loadFile((char*)"bliss_bad.bmp", (char*)"pave.bmp", (char*)"cloud.bmp", 1440, 1440);
+	sky->loadFile((char*)"bliss.bmp", (char*)"grass.bmp", (char*)"cloud.bmp", 1440, 1440);
 
 	//load a mesh into the scene
 	RTTriangleMesh * teapot = new RTTriangleMesh(&scene, brdf_lambert, emit_black);
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 	//camera location
 	scene.move(5.f, 8.f, 0.f);
 	scene.point(-1.f, -1.5f, 0.f);
-	scene.zoom(1.2f);
+	scene.zoom(0.8f);
 	scene.resize(output.width, output.height);
 
 	vec3f *last_dir, *last_color;
