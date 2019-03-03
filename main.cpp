@@ -40,13 +40,11 @@ int main(int argc, char** argv) {
 	//output file
 	BMPC output(1000, 1000);
 
+	//camera location
 	scene.move(6.f, 6.f, 6.f);
 	scene.point(-1.f, -1.f, -1.f);
 	scene.zoom(1.f);
 	scene.resize(output.width, output.height);
-
-	//initialize ray origin to camera origin	
-	setRayOrg(&(scene.rh), scene.cam->eye);
 
 	//test point light
 	vec3f * lamp = new vec3f(4.f, 6.f, 8.f);
@@ -55,6 +53,7 @@ int main(int argc, char** argv) {
 		for (int v = 0; v < output.height; v++) {
 			scene.resetRH();
 
+			setRayOrg(&scene.rh, scene.cam->eye);
 			setRayDir(&scene.rh, scene.cam->lookat(u, v));
 
 			rtcIntersect1(scene.scene, &scene.context, &scene.rh);
@@ -69,11 +68,20 @@ int main(int argc, char** argv) {
 			vec3f * hit_p = scene.hitP();
 			vec3f * hit_n = scene.hitN();
 
-			//simple cosine shading
+			//ray to light
 			vec3f * to_lamp = sub(lamp, hit_p);
 			to_lamp->normalize();
+
+			//check occlusion
+			scene.resetR();
+			setRayOrg(&scene.rh, hit_p);
+			setRayDir(&scene.rh, to_lamp);
+			rtcOccluded1(scene.scene, &scene.context, &scene.rh.ray);
+
+			//cosine shading
 			float lambert = hit_n->dot(to_lamp);
 			if (lambert < 0.f) lambert = 0.f; //backside
+			if (isinf(scene.rh.ray.tfar)) lambert = 0.f;
 			unsigned char shade = (unsigned char)(lambert * 255.f);
 			
 			//write output color
