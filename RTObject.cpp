@@ -80,8 +80,8 @@ vec3f * RTScene::hitN() {
 	return result;
 }
 
-float RTScene::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
-	return obs[id]->reflect(theta_i, phi_i, theta_o, phi_o);
+float RTScene::reflect(int id, int prim, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
+	return obs[id]->reflect(prim, u, v, theta_i, phi_i, theta_o, phi_o);
 }
 
 float RTScene::emit(int id, int prim, float u, float v) {
@@ -131,7 +131,7 @@ void RTTriangleMesh::loadFile(char * fname) {
   fclose(in);
 }
 
-float RTTriangleMesh::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
+float RTTriangleMesh::reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
 	return material(theta_i, phi_i, theta_o, phi_o);
 }
 
@@ -147,14 +147,19 @@ RTSkyBox::RTSkyBox(RTScene * s, float l, vec3f *p) {
 	id = s->record_obj(this);
 }
 
-void RTSkyBox::loadFile(char * fname, int w, int h) {
+void RTSkyBox::loadFile(char * sname, char * bname, int w, int h) {
 	texw = w; texh = h;
 
-	red = (unsigned char*)malloc(w*h);
-	green = (unsigned char*)malloc(w*h);
-	blue = (unsigned char*)malloc(w*h);
+	s_red = (unsigned char*)malloc(w*h);
+	s_green = (unsigned char*)malloc(w*h);
+	s_blue = (unsigned char*)malloc(w*h);
+
+	b_red = (unsigned char*)malloc(w*h);
+	b_green = (unsigned char*)malloc(w*h);
+	b_blue = (unsigned char*)malloc(w*h);
 	
-	read_bmp(red, green, blue, w, h, fname);
+	read_bmp(s_red, s_green, s_blue, w, h, sname);
+	read_bmp(b_red, b_green, b_blue, w, h, bname);
 
   Vertex * vertices  = (Vertex*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex), 8);
   Triangle * triangles = (Triangle*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(Triangle), 12);
@@ -172,41 +177,66 @@ void RTSkyBox::loadFile(char * fname, int w, int h) {
 
 	int tri = 0;
 
-	// left side
-	triangles[tri].v0 = 2; triangles[tri].v1 = 1; triangles[tri].v2 = 0; tri++;
-  triangles[tri].v0 = 2; triangles[tri].v1 = 3; triangles[tri].v2 = 1; tri++;
+	// -x side
+	triangles[tri].v0 = 3; triangles[tri].v1 = 1; triangles[tri].v2 = 2; tri++;
+  triangles[tri].v0 = 0; triangles[tri].v1 = 2; triangles[tri].v2 = 1; tri++;
 
-  // right side
-  triangles[tri].v0 = 5; triangles[tri].v1 = 6; triangles[tri].v2 = 4; tri++;
-  triangles[tri].v0 = 7; triangles[tri].v1 = 6; triangles[tri].v2 = 5; tri++;
+  // -y side
+  triangles[tri].v0 = 1; triangles[tri].v1 = 5; triangles[tri].v2 = 0; tri++;
+  triangles[tri].v0 = 4; triangles[tri].v1 = 0; triangles[tri].v2 = 5; tri++;
 
-  // bottom side
-  triangles[tri].v0 = 1; triangles[tri].v1 = 4; triangles[tri].v2 = 0; tri++;
-  triangles[tri].v0 = 5; triangles[tri].v1 = 4; triangles[tri].v2 = 1; tri++;
+  // +x side
+  triangles[tri].v0 = 5; triangles[tri].v1 = 7; triangles[tri].v2 = 4; tri++;
+  triangles[tri].v0 = 6; triangles[tri].v1 = 4; triangles[tri].v2 = 7; tri++;
 
-  // top side
-  triangles[tri].v0 = 6; triangles[tri].v1 = 3; triangles[tri].v2 = 2; tri++;
-  triangles[tri].v0 = 6; triangles[tri].v1 = 7; triangles[tri].v2 = 3; tri++;
+  // +y side
+  triangles[tri].v0 = 7; triangles[tri].v1 = 3; triangles[tri].v2 = 6; tri++;
+  triangles[tri].v0 = 2; triangles[tri].v1 = 6; triangles[tri].v2 = 3; tri++;
 
-  // front side
-  triangles[tri].v0 = 4; triangles[tri].v1 = 2; triangles[tri].v2 = 0; tri++;
-  triangles[tri].v0 = 4; triangles[tri].v1 = 6; triangles[tri].v2 = 2; tri++;
+  // +z side
+  triangles[tri].v0 = 6; triangles[tri].v1 = 2; triangles[tri].v2 = 4; tri++;
+  triangles[tri].v0 = 0; triangles[tri].v1 = 4; triangles[tri].v2 = 2; tri++;
 
-  // back side
-  triangles[tri].v0 = 3; triangles[tri].v1 = 5; triangles[tri].v2 = 1; tri++;
+  // -z side
   triangles[tri].v0 = 7; triangles[tri].v1 = 5; triangles[tri].v2 = 3; tri++;
+  triangles[tri].v0 = 1; triangles[tri].v1 = 3; triangles[tri].v2 = 5; tri++;
+
 
 	rtcCommitGeometry(geom);
 	rtcAttachGeometryByID(*scene, geom, id);
 }
 
-float RTSkyBox::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
+float RTSkyBox::reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
+	if (id == 8 || id == 9) {
+		v = 1.f - v;
+		if (id == 9) {u = 1.f - u; v = 1.f - v;}
+		int p = (int)(u*texw); 
+		int q = (int)(v*texh);
+		float raw = 0.2 * b_red[q * texw + p] + 0.7 * b_green[q * texw + p] + 0.1 * b_blue[q * texw + p];
+		return raw / 255.f;
+	}
 	return 0.0f;
 }
 
 float RTSkyBox::emit(int id, float u, float v) {
-	int p = (int)(u*texw);
-	int q = (int)(v*texh);
-	float raw = 0.2 * red[q * texw + p] + 0.7 * green[q * texw + p] + 0.1 * blue[q * texw + p];
-	return 0.5f * raw / 255.f;
+	v = 1.f - v;
+	if (id % 2 == 1) {u = 1.f - u; v = 1.f - v;}
+
+	float raw = 0.f;
+	if (id <= 7) {
+		int h_offs = (id / 2) * (texw / 4);
+		int p = (int)(u*texw / 4 + h_offs);
+		int q = (int)(v*texh);
+		raw = 0.2 * s_red[q * texw + p] + 0.7 * s_green[q * texw + p] + 0.1 * s_blue[q * texw + p];
+	}
+
+	if (id == 8 || id == 9) {
+		return 0.f;
+	}
+
+	if (id == 10 || id == 11) {
+		raw = 0.5f;
+	}
+
+	return raw / 255.f;
 }

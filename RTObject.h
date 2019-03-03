@@ -29,7 +29,7 @@ public:
 	vec3f * hitP();
 	vec3f * hitN();
 public:
-	float reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o);
+	float reflect(int id, int prim, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
 	float emit(int id, int prim, float u, float v);
 public:
 	RTCDevice device;
@@ -49,7 +49,7 @@ public:
 	RTCGeometry geom;
 	int id;
 public:
-	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o) {return 1.f;}
+	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {return 1.f;}
 	virtual float emit(int id, float u, float v) {return 0.f;}
 };
 
@@ -59,7 +59,7 @@ public:
 public:
 	void loadFile(char * fname);
 public:
-	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o);
+	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
 	virtual float emit(int id, float u, float v);
 public:
 	brdf_t material;
@@ -71,16 +71,18 @@ class RTSkyBox : public RTObject {
 public:
 	RTSkyBox(RTScene * s, float l, vec3f * p);
 public:
-	void loadFile(char * fname, int w, int h);
+	void loadFile(char * sname, char * bname, int w, int h);
 public:
-	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o);
+	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
 	virtual float emit(int id, float u, float v);
 public:
 	float len;
 	vec3f * pos;
 private:
 	int texw, texh;
-	unsigned char *red, *green, *blue;
+	unsigned char *s_red, *s_green, *s_blue;
+	unsigned char *b_red, *b_green, *b_blue;
+	unsigned char *t_red, *t_green, *t_blue;
 };
 
 #endif
