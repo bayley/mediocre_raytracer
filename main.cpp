@@ -15,6 +15,12 @@ inline void setRayDir(RTCRayHit * rh, vec3f * dir) {
 	rh->ray.dir_z = dir->z;
 }
 
+inline void setRayOrg(RTCRayHit * rh, vec3f * org) {
+	rh->ray.org_x = org->x;
+	rh->ray.org_y = org->y;
+	rh->ray.org_z = org->z;
+}
+
 int main(int argc, char** argv) {
 	//create a new scene
 	RTScene scene;
@@ -34,17 +40,13 @@ int main(int argc, char** argv) {
 	//output file
 	BMPC output(1000, 1000);
 
-	//static camera at <6, 6, 6> looking at the origin
-	vec3f * eye = new vec3f(6.f, 6.f, 6.f);
-	vec3f * cam_dir = new vec3f(-1.f, -1.f, -1.f);
-	cam_dir->normalize();
-
-	Camera * cam = new Camera(eye->x, eye->y, eye->z,
-														cam_dir->x, cam_dir->y, cam_dir->z,
-														1.0f, output.width, output.height);
+	scene.move(6.f, 6.f, 6.f);
+	scene.point(-1.f, -1.f, -1.f);
+	scene.zoom(1.f);
+	scene.resize(output.width, output.height);
 
 	//initialize ray origin to camera origin	
-	scene.rh.ray.org_x = eye->x; scene.rh.ray.org_y = eye->y; scene.rh.ray.org_z = eye->z;
+	setRayOrg(&(scene.rh), scene.cam->eye);
 
 	//test point light
 	vec3f * lamp = new vec3f(4.f, 6.f, 8.f);
@@ -53,7 +55,7 @@ int main(int argc, char** argv) {
 		for (int v = 0; v < output.height; v++) {
 			scene.resetRH();
 
-			setRayDir(&scene.rh, cam->lookat(u, v));
+			setRayDir(&scene.rh, scene.cam->lookat(u, v));
 
 			rtcIntersect1(scene.scene, &scene.context, &scene.rh);
 

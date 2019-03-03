@@ -49,11 +49,12 @@ public:
 	void resize(int w, int h);
 private:
 	void update(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h);
-private:
+public:
 	vec3f *eye, *dir;
-	vec3f *u, *v;
 	float fov;
 	int width, height;
+private:
+	vec3f *u, *v;
 };
 
 //utility functions
