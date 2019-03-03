@@ -61,9 +61,11 @@ typedef struct {
 } Triangle;
 
 typedef struct {
+	RTCGeometry mesh;
 	int num_vertices;
 	int num_triangles;
-} MeshSize;
+	int id;
+} MeshAttr;
 
 enum {
 	AXIS_X,
