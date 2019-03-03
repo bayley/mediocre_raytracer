@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <float.h>
 
+#include "brdf.h"
 #include "geom.h"
 #include "RTObject.h"
 
@@ -16,14 +17,18 @@ RTScene::RTScene() {
 	cam = new Camera(0.f, 0.f, 0.f, 1.f, 1.f, 1.f, 1.0f, 100, 100);
 	rtcInitIntersectContext(&context);
 	rh.ray.time = 0.f;
+
 	obs = (RTObject **)malloc(64 * sizeof(RTObject *));
+	brdfs = (brdf_t *)malloc(64 * sizeof(brdf_t));
+	emits = (emit_t *)malloc(64 * sizeof(emit_t));
 	obj_count = 0;
 }
 
 int RTScene::record_obj(RTObject * obj) {
 	if (obj_count >= 64) return -1;
 	obs[obj_count] = obj;
-	return obj_count++;
+	obj_count++;
+	return obj_count - 1;
 }
 
 void RTScene::commit() {
@@ -43,9 +48,6 @@ void RTScene::resetR() {
 }
 
 void RTScene::cleanup() {
-	for(int i = 0; i < obj_count; i++) {
-		rtcReleaseGeometry(obs[i]->geom);
-	}
 	rtcReleaseScene(scene);
 	rtcReleaseDevice(device);
 }
@@ -76,12 +78,22 @@ vec3f * RTScene::hitN() {
 	return result;
 }
 
-RTTriangleMesh::RTTriangleMesh(RTScene * s) {
+float RTScene::brdf(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
+	return obs[id]->material(theta_i, phi_i, theta_o, phi_o);
+}
+
+float RTScene::emit(int id, int prim, float u, float v) {
+	return obs[id]->bright(prim, u, v);
+}
+
+RTTriangleMesh::RTTriangleMesh(RTScene * s, brdf_t m, emit_t b) {
 	device = &(s->device);
 	scene = &(s->scene);
 	geom = rtcNewGeometry(*device, RTC_GEOMETRY_TYPE_TRIANGLE);
 	num_vertices = 0;
 	num_triangles = 0;
+	material = m;
+	bright = b;
 	id = s->record_obj(this);
 }
 
@@ -114,5 +126,61 @@ void RTTriangleMesh::loadFile(char * fname) {
 
   rtcCommitGeometry(geom);
   rtcAttachGeometryByID(*scene, geom, id);
+	rtcReleaseGeometry(geom);
   fclose(in);
+}
+
+RTSkyBox::RTSkyBox(RTScene * s, float l, vec3f *p) {
+	device = &(s->device);
+	scene = &(s->scene);
+	geom = rtcNewGeometry(*device, RTC_GEOMETRY_TYPE_TRIANGLE);
+	len = l; pos = p;
+	material = brdf_black;
+	bright = emit_white;
+	id = s->record_obj(this);
+}
+
+void RTSkyBox::loadFile(char * fname) {
+  Vertex * vertices  = (Vertex*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex), 8);
+  Triangle * triangles = (Triangle*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(Triangle), 12);
+	
+	float l2 = len / 2.f;
+
+	vertices[0].x = -l2 + pos->x; vertices[0].y = -l2 + pos->y; vertices[0].z = -l2 + pos->z;
+  vertices[1].x = -l2 + pos->x; vertices[1].y = -l2 + pos->y; vertices[1].z = l2 + pos->z;
+  vertices[2].x = -l2 + pos->x; vertices[2].y = l2 + pos->y; vertices[2].z = -l2 + pos->z;
+  vertices[3].x = -l2 + pos->x; vertices[3].y = l2 + pos->y; vertices[3].z = l2 + pos->z;
+  vertices[4].x = l2 + pos->x; vertices[4].y = -l2 + pos->y; vertices[4].z = -l2 + pos->z;
+  vertices[5].x = l2 + pos->x; vertices[5].y = -l2 + pos->y; vertices[5].z = l2 + pos->z;
+  vertices[6].x = l2 + pos->x; vertices[6].y = l2 + pos->y; vertices[6].z = -l2 + pos->z;
+  vertices[7].x = l2 + pos->x; vertices[7].y = l2 + pos->y; vertices[7].z = l2 + pos->z;
+
+	int tri = 0;
+	// left side
+	triangles[tri].v0 = 0; triangles[tri].v1 = 1; triangles[tri].v2 = 2; tri++;
+  triangles[tri].v0 = 1; triangles[tri].v1 = 3; triangles[tri].v2 = 2; tri++;
+
+  // right side
+  triangles[tri].v0 = 4; triangles[tri].v1 = 6; triangles[tri].v2 = 5; tri++;
+  triangles[tri].v0 = 5; triangles[tri].v1 = 6; triangles[tri].v2 = 7; tri++;
+
+  // bottom side
+  triangles[tri].v0 = 0; triangles[tri].v1 = 4; triangles[tri].v2 = 1; tri++;
+  triangles[tri].v0 = 1; triangles[tri].v1 = 4; triangles[tri].v2 = 5; tri++;
+
+  // top side
+  triangles[tri].v0 = 2; triangles[tri].v1 = 3; triangles[tri].v2 = 6; tri++;
+  triangles[tri].v0 = 3; triangles[tri].v1 = 7; triangles[tri].v2 = 6; tri++;
+
+  // front side
+  triangles[tri].v0 = 0; triangles[tri].v1 = 2; triangles[tri].v2 = 4; tri++;
+  triangles[tri].v0 = 2; triangles[tri].v1 = 6; triangles[tri].v2 = 4; tri++;
+
+  // back side
+  triangles[tri].v0 = 1; triangles[tri].v1 = 5; triangles[tri].v2 = 3; tri++;
+  triangles[tri].v0 = 3; triangles[tri].v1 = 5; triangles[tri].v2 = 7; tri++;
+
+	rtcCommitGeometry(geom);
+	rtcAttachGeometryByID(*scene, geom, id);
+	rtcReleaseGeometry(geom);
 }

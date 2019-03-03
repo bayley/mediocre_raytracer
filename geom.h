@@ -68,12 +68,14 @@ typedef struct {
 	int v0; int v1; int v2;
 } Triangle;
 
+typedef struct {
+	float x; float y; float z;
+} Vertex;
+
 enum {
 	AXIS_X,
 	AXIS_Y,
 	AXIS_Z,
 };
-
-typedef vec3f Vertex;
 
 #endif

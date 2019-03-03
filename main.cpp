@@ -32,8 +32,12 @@ int main(int argc, char** argv) {
 	//create a new scene
 	RTScene scene;
 
+	//load a skybox
+	RTSkyBox * sky = new RTSkyBox(&scene, 40.f, new vec3f(0.f, 0.f, 0.f));
+	sky->loadFile((char*)"");
+
 	//load a mesh into the scene
-	RTTriangleMesh * teapot = new RTTriangleMesh(&scene);
+	RTTriangleMesh * teapot = new RTTriangleMesh(&scene, brdf_lambert, emit_black);
 	teapot->loadFile(argv[1]);
 	printf("Loaded %s with %d vertices and %d faces\n", argv[1], teapot->num_vertices, teapot->num_triangles);
 
@@ -71,25 +75,31 @@ int main(int argc, char** argv) {
 			vec3f * hit_p = scene.hitP();
 			vec3f * hit_n = scene.hitN();
 
-			//ray to light
+			//ray to light, don't normalize yet!
 			vec3f * to_lamp = sub(lamp, hit_p);
-			to_lamp->normalize();
 
 			//check occlusion
 			scene.resetR();
+			scene.rh.ray.tfar = 1.f; //only check occlusion between light and hit
 			setRayOrg(&scene.rh, hit_p);
 			setRayDir(&scene.rh, to_lamp);
 			rtcOccluded1(scene.scene, &scene.context, &scene.rh.ray);
 
-			//cosine shading
-			float lambert = hit_n->dot(to_lamp);
-			if (lambert < 0.f) lambert = 0.f; //backside
-			if (isinf(scene.rh.ray.tfar)) lambert = 0.f;
+			//cosine term
+			to_lamp->normalize();
+			float cos_n = hit_n->dot(to_lamp);
+			if (cos_n < 0.f) cos_n = 0.f; //backside
+			if (isinf(scene.rh.ray.tfar)) cos_n = 0.f;
 
-			unsigned char shade = (unsigned char)(lambert * 255.f);
+			//materials are stored in the scene
+			//works OK for one-mesh one-material, not so much for one-face one-material
+			float shade = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) +
+										cos_n * scene.brdf(scene.rh.hit.geomID, 0.f, 0.f, 0.f, 0.f);
+
+			unsigned char color = (unsigned char)(shade * 255.f);
 			
 			//write output color
-			output.set_px(u, v, shade, shade, shade);
+			output.set_px(u, v, color, color, color);
 		}
 	}
 

@@ -4,6 +4,7 @@
 #include <embree3/rtcore.h>
 
 #include "geom.h"
+#include "brdf.h"
 
 class RTObject;
 
@@ -28,6 +29,9 @@ public:
 	vec3f * hitP();
 	vec3f * hitN();
 public:
+	float brdf(int id, float theta_i, float phi_i, float theta_o, float phi_o);
+	float emit(int id, int prim, float u, float v);
+public:
 	RTCDevice device;
 	RTCScene scene;
 	RTCRayHit rh;
@@ -36,6 +40,9 @@ public:
 private:
 	RTObject ** obs;
 	int obj_count;
+private:
+	brdf_t * brdfs;
+	emit_t * emits;
 };
 
 class RTObject {
@@ -44,11 +51,14 @@ public:
 	RTCScene * scene;
 	RTCGeometry geom;
 	int id;
+public:
+	brdf_t material;
+	emit_t bright;
 };
 
 class RTTriangleMesh : public RTObject {
 public:
-	RTTriangleMesh(RTScene * s);
+	RTTriangleMesh(RTScene * s, brdf_t m, emit_t b);
 public:
 	void loadFile(char * fname);
 public:
