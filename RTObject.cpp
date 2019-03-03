@@ -241,6 +241,6 @@ vec3f * RTSkyBox::emit(int id, float u, float v) {
 	}
 
 	if (id == 10 || id == 11) {
-		return new vec3f(0.f, 1.f, 1.f);
+		return new vec3f(.88f, .66f, 0.094f);
 	}
 }

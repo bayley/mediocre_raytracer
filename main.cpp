@@ -73,7 +73,12 @@ int main(int argc, char** argv) {
 
 	//test point light
 	vec3f * lamp = new vec3f(4.f, 6.f, 8.f);
-	float lamp_p = 0.3f;
+	float lamp_p = 0.15f;
+
+	vec3f *last_dir, *last_color;
+	vec3f * emission;
+	int last_id, last_prim;
+	float refl;
 
 	for (int u = 0; u < output.width; u++) {
 		for (int v = 0; v < output.height; v++) {
@@ -90,14 +95,21 @@ int main(int argc, char** argv) {
 				continue;
 			}
 
-			//hit point, normal vector, local axes
+			//hit point, normal vector
 			vec3f * hit_p = scene.hitP();
 			vec3f * hit_n = scene.hitN();
-			vec3f * hit_u = local_u(hit_n);
-			vec3f * hit_v = hit_n->cross(hit_u);
+
+			//store last hit
+			last_id = scene.rh.hit.geomID;
+			last_prim = scene.rh.hit.primID;
+			last_dir = new vec3f(scene.rh.ray.dir_x, scene.rh.ray.dir_y, scene.rh.ray.dir_z);
+			last_color = scene.color(last_id, last_prim, scene.rh.hit.u, scene.rh.hit.v);
 
 			//ray to light, don't normalize yet!
 			vec3f * to_lamp = sub(lamp, hit_p);
+
+			//direct lighting
+			float cos_l, occluded = 1.f;
 
 			//check occlusion
 			scene.resetR();
@@ -105,37 +117,37 @@ int main(int argc, char** argv) {
 			setRayOrg(&scene.rh, hit_p);
 			setRayDir(&scene.rh, to_lamp);
 			rtcOccluded1(scene.scene, &scene.context, &scene.rh.ray);
+			if (isinf(scene.rh.ray.tfar)) occluded = 0.f;
 
-			//cosine term
+			//normalize ray to light, compute cos term
 			to_lamp->normalize();
-			float cos_l = hit_n->dot(to_lamp);
+			cos_l = hit_n->dot(to_lamp);
 			if (cos_l < 0.f) cos_l = 0.f; //backside
-			if (isinf(scene.rh.ray.tfar)) cos_l = 0.f;
-
-			//store last hit
-			float last_id = scene.rh.hit.geomID;
-			float last_prim = scene.rh.hit.primID;
 
 			//emission + direct
-			vec3f * last_color = scene.color(last_id, last_prim, scene.rh.hit.u, scene.rh.hit.v);
-			float last_refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f);
-			//float d_illum = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) +
-			//							  cos_l * last_color * last_refl;
-			vec3f * d_illum = add(scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v), mul(last_color, last_refl * cos_l * lamp_p));
+			refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
+			emission = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
+			vec3f * d_illum = add(emission, mul(last_color, refl * cos_l * occluded * lamp_p));
 
 			//do GI
 			float hit_theta, hit_phi;
 			vec3f * g_illum = new vec3f(0.f, 0.f, 0.f);	
-			int n_samples = 1000;
+			int n_samples = 10;
 
 			for (int sample = 0; sample < n_samples; sample++) {
-				hit_theta = rangle(); hit_phi = rangle();
+				float backside = last_dir->dot(hit_n) > 0.f ? -1.f : 1.f;
+				vec3f * hit_u = local_u(hit_n);
+				vec3f * hit_v = hit_n->cross(hit_u);
+
+				hit_theta = rangle() - M_PI / 2.f; hit_phi = rangle() * 2.f;
+
 				float c_u = sinf(hit_theta) * cosf(hit_phi);
 				float c_v = sinf(hit_theta) * sinf(hit_phi);
-				float c_n = cosf(hit_theta);
+				float c_n = cosf(hit_theta) * backside;
 				vec3f * out_dir = add(add(mul(hit_u, c_u), mul(hit_v, c_v)), mul(hit_n, c_n));
 				out_dir->normalize();
-				float cos_g = hit_n->dot(out_dir);
+
+				float cos_g = backside * hit_n->dot(out_dir);
 
 				//one GI bounce
 				scene.resetRH();
@@ -149,20 +161,17 @@ int main(int argc, char** argv) {
 				}
 				
 				//cheating - we ignore direct illumination
-				//g_illum += cos_g * scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) * 
-				//									 last_color * scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f);
-				g_illum = add(g_illum, mul(mul(last_color, cos_g * scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f)),
-																	 scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v)));
+				refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
+				emission = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
+				g_illum = add(g_illum, mul(mul(last_color, cos_g * refl), emission));
 			}
-			//g_illum /= (float)(n_samples);
 			g_illum = mul(g_illum, 1.f / (float)n_samples);
 
-			//float illum = d_illum + g_illum;
-			//if (illum > 1.f) illum = 1.f;
 			vec3f * illum = add(d_illum, g_illum);
 			if (illum->x > 1.f) illum->x = 1.f;
 			if (illum->y > 1.f) illum->y = 1.f;
 			if (illum->z > 1.f) illum->z = 1.f;
+
 			unsigned char c_r, c_g, c_b;
 			c_r = (unsigned char)(illum->x * 255.f);
 			c_g = (unsigned char)(illum->y * 255.f);
