@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
 	//load a skybox
 	RTSkyBox * sky = new RTSkyBox(&scene, 40.f, new vec3f(0.f, 0.f, 0.f));
-	sky->loadFile((char*)"");
+	sky->loadFile((char*)"bliss_bad.bmp", 1440, 1440);
 
 	//load a mesh into the scene
 	RTTriangleMesh * teapot = new RTTriangleMesh(&scene, brdf_lambert, emit_black);
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 			//materials are stored in the scene
 			//works OK for one-mesh one-material, not so much for one-face one-material
 			float shade = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) +
-										cos_n * scene.brdf(scene.rh.hit.geomID, 0.f, 0.f, 0.f, 0.f);
+										cos_n * scene.reflect(scene.rh.hit.geomID, 0.f, 0.f, 0.f, 0.f);
 
 			unsigned char color = (unsigned char)(shade * 255.f);
 			

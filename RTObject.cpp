@@ -4,6 +4,7 @@
 #include <float.h>
 
 #include "brdf.h"
+#include "bmp.h"
 #include "geom.h"
 #include "RTObject.h"
 
@@ -19,8 +20,6 @@ RTScene::RTScene() {
 	rh.ray.time = 0.f;
 
 	obs = (RTObject **)malloc(64 * sizeof(RTObject *));
-	brdfs = (brdf_t *)malloc(64 * sizeof(brdf_t));
-	emits = (emit_t *)malloc(64 * sizeof(emit_t));
 	obj_count = 0;
 }
 
@@ -48,6 +47,9 @@ void RTScene::resetR() {
 }
 
 void RTScene::cleanup() {
+	for (int i = 0; i < obj_count; i++) {
+		rtcReleaseGeometry(obs[i]->geom);
+	}
 	rtcReleaseScene(scene);
 	rtcReleaseDevice(device);
 }
@@ -78,12 +80,12 @@ vec3f * RTScene::hitN() {
 	return result;
 }
 
-float RTScene::brdf(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
-	return obs[id]->material(theta_i, phi_i, theta_o, phi_o);
+float RTScene::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
+	return obs[id]->reflect(theta_i, phi_i, theta_o, phi_o);
 }
 
 float RTScene::emit(int id, int prim, float u, float v) {
-	return obs[id]->bright(prim, u, v);
+	return obs[id]->emit(prim, u, v);
 }
 
 RTTriangleMesh::RTTriangleMesh(RTScene * s, brdf_t m, emit_t b) {
@@ -93,7 +95,7 @@ RTTriangleMesh::RTTriangleMesh(RTScene * s, brdf_t m, emit_t b) {
 	num_vertices = 0;
 	num_triangles = 0;
 	material = m;
-	bright = b;
+	emission = b;
 	id = s->record_obj(this);
 }
 
@@ -126,8 +128,15 @@ void RTTriangleMesh::loadFile(char * fname) {
 
   rtcCommitGeometry(geom);
   rtcAttachGeometryByID(*scene, geom, id);
-	rtcReleaseGeometry(geom);
   fclose(in);
+}
+
+float RTTriangleMesh::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
+	return material(theta_i, phi_i, theta_o, phi_o);
+}
+
+float RTTriangleMesh::emit(int id, float u, float v) {
+	return emission(id, u, v);
 }
 
 RTSkyBox::RTSkyBox(RTScene * s, float l, vec3f *p) {
@@ -135,12 +144,18 @@ RTSkyBox::RTSkyBox(RTScene * s, float l, vec3f *p) {
 	scene = &(s->scene);
 	geom = rtcNewGeometry(*device, RTC_GEOMETRY_TYPE_TRIANGLE);
 	len = l; pos = p;
-	material = brdf_black;
-	bright = emit_white;
 	id = s->record_obj(this);
 }
 
-void RTSkyBox::loadFile(char * fname) {
+void RTSkyBox::loadFile(char * fname, int w, int h) {
+	texw = w; texh = h;
+
+	red = (unsigned char*)malloc(w*h);
+	green = (unsigned char*)malloc(w*h);
+	blue = (unsigned char*)malloc(w*h);
+	
+	read_bmp(red, green, blue, w, h, fname);
+
   Vertex * vertices  = (Vertex*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex), 8);
   Triangle * triangles = (Triangle*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(Triangle), 12);
 	
@@ -182,5 +197,14 @@ void RTSkyBox::loadFile(char * fname) {
 
 	rtcCommitGeometry(geom);
 	rtcAttachGeometryByID(*scene, geom, id);
-	rtcReleaseGeometry(geom);
+}
+
+float RTSkyBox::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
+	return 0.f;
+}
+
+float RTSkyBox::emit(int id, float u, float v) {
+	int p = (int)(u*texw);
+	int q = (int)(v*texh);
+	return 0.3f * (float)green[q * texw + p] / 255.f;
 }
