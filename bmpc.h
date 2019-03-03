@@ -6,6 +6,7 @@ public:
 	BMPC(int w, int h);
 public:
 	void set_px(int u, int v, unsigned char r, unsigned char g, unsigned char b);
+	void set_px(int u, int v, float r, float g, float b);
 	void write(char * fname);
 public:
 	int width, height;

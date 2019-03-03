@@ -251,6 +251,5 @@ vec3f * RTSkyBox::emit(int id, float u, float v) {
 		int p = (int)(u*texw); 
 		int q = (int)(v*texh);
 		return new vec3f((float)t_red[q * texw + p] / 255.f, (float)t_green[q * texw + p] / 255.f, (float)t_blue[q * texw + p] / 255.f);
-		//return new vec3f(.88f, .66f, 0.094f);
 	}
 }

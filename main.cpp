@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include <float.h>
@@ -37,11 +38,30 @@ inline float rangle() {
 	return (float)(M_PI * (double)(rand())/(double)(RAND_MAX));
 }
 
+inline vec3f * random_dir(vec3f * n, float backside) {
+	vec3f * u = local_u(n);
+	vec3f * v = n->cross(u);
+
+	float hit_theta = rangle() - M_PI / 2.f, hit_phi = rangle() * 2.f;
+
+	float c_u = sinf(hit_theta) * cosf(hit_phi);
+	float c_v = sinf(hit_theta) * sinf(hit_phi);
+	float c_n = cosf(hit_theta) * backside;
+	vec3f * out_dir = add(add(mul(u, c_u), mul(v, c_v)), mul(n, c_n));
+	out_dir->normalize();
+
+	return out_dir;
+}
+
 int main(int argc, char** argv) {
+	int n_samples = 16;
 	//print a message and quit if no args
 	if (argc < 2) {
 		printf("Please give a file name\n");
 		return -1;
+	}
+	if (argc > 2) {
+		n_samples = atoi(argv[2]);
 	}
 
 	//random seed
@@ -71,10 +91,6 @@ int main(int argc, char** argv) {
 	scene.zoom(1.2f);
 	scene.resize(output.width, output.height);
 
-	//test point light
-	vec3f * lamp = new vec3f(4.f, 6.f, 8.f);
-	float lamp_p = 0.15f;
-
 	vec3f *last_dir, *last_color;
 	vec3f * emission;
 	int last_id, last_prim;
@@ -91,7 +107,7 @@ int main(int argc, char** argv) {
 
 			//fill with background color
 			if (scene.rh.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
-				output.set_px(u, v, 0, 0, 0);	
+				output.set_px(u, v, 0.f, 0.f, 0.f);	
 				continue;
 			}
 
@@ -105,48 +121,16 @@ int main(int argc, char** argv) {
 			last_dir = new vec3f(scene.rh.ray.dir_x, scene.rh.ray.dir_y, scene.rh.ray.dir_z);
 			last_color = scene.color(last_id, last_prim, scene.rh.hit.u, scene.rh.hit.v);
 
-			//ray to light, don't normalize yet!
-			vec3f * to_lamp = sub(lamp, hit_p);
-
-			//direct lighting
-			float cos_l, occluded = 1.f;
-
-			//check occlusion
-			scene.resetR();
-			scene.rh.ray.tfar = 1.f; //only check occlusion between light and hit
-			setRayOrg(&scene.rh, hit_p);
-			setRayDir(&scene.rh, to_lamp);
-			rtcOccluded1(scene.scene, &scene.context, &scene.rh.ray);
-			if (isinf(scene.rh.ray.tfar)) occluded = 0.f;
-
-			//normalize ray to light, compute cos term
-			to_lamp->normalize();
-			cos_l = hit_n->dot(to_lamp);
-			if (cos_l < 0.f) cos_l = 0.f; //backside
-
-			//emission + direct
-			refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
-			emission = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
-			vec3f * d_illum = add(emission, mul(last_color, refl * cos_l * occluded * lamp_p));
+			//direct (just emission for now)
+			vec3f * d_illum = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
 
 			//do GI
 			float hit_theta, hit_phi;
 			vec3f * g_illum = new vec3f(0.f, 0.f, 0.f);	
-			int n_samples = 128;
 
 			for (int sample = 0; sample < n_samples; sample++) {
 				float backside = last_dir->dot(hit_n) > 0.f ? -1.f : 1.f;
-				vec3f * hit_u = local_u(hit_n);
-				vec3f * hit_v = hit_n->cross(hit_u);
-
-				hit_theta = rangle() - M_PI / 2.f; hit_phi = rangle() * 2.f;
-
-				float c_u = sinf(hit_theta) * cosf(hit_phi);
-				float c_v = sinf(hit_theta) * sinf(hit_phi);
-				float c_n = cosf(hit_theta) * backside;
-				vec3f * out_dir = add(add(mul(hit_u, c_u), mul(hit_v, c_v)), mul(hit_n, c_n));
-				out_dir->normalize();
-
+				vec3f * out_dir = random_dir(hit_n, backside);
 				float cos_g = backside * hit_n->dot(out_dir);
 
 				//one GI bounce
@@ -160,25 +144,18 @@ int main(int argc, char** argv) {
 					continue;
 				}
 				
-				//cheating - we ignore direct illumination
+				//add the emission from the new hit
 				refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
 				emission = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
 				g_illum = add(g_illum, mul(mul(last_color, cos_g * refl), emission));
 			}
 			g_illum = mul(g_illum, 1.f / (float)n_samples);
 
+			//direct + global
 			vec3f * illum = add(d_illum, g_illum);
-			if (illum->x > 1.f) illum->x = 1.f;
-			if (illum->y > 1.f) illum->y = 1.f;
-			if (illum->z > 1.f) illum->z = 1.f;
-
-			unsigned char c_r, c_g, c_b;
-			c_r = (unsigned char)(illum->x * 255.f);
-			c_g = (unsigned char)(illum->y * 255.f);
-			c_b = (unsigned char)(illum->z * 255.f);
 			
 			//write output color
-			output.set_px(u, v, c_r, c_g, c_b);
+			output.set_px(u, v, illum->x, illum->y, illum->z);
 		}
 	}
 
