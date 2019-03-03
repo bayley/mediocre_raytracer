@@ -29,9 +29,9 @@ public:
 	vec3f * hitP();
 	vec3f * hitN();
 public:
-	float color(int id, int prim, float u, float v);
+	vec3f * color(int id, int prim, float u, float v);
 	float reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o);
-	float emit(int id, int prim, float u, float v);
+	vec3f * emit(int id, int prim, float u, float v);
 public:
 	RTCDevice device;
 	RTCScene scene;
@@ -50,9 +50,9 @@ public:
 	RTCGeometry geom;
 	int id;
 public:
-	virtual float color(int id, float u, float v) {return 0.f;}
+	virtual vec3f * color(int id, float u, float v) {return new vec3f(0.f, 0.f, 0.f);}
 	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o) {return 1.f;}
-	virtual float emit(int id, float u, float v) {return 0.f;}
+	virtual vec3f * emit(int id, float u, float v) {return new vec3f(0.f, 0.f, 0.f);}
 };
 
 class RTTriangleMesh : public RTObject {
@@ -61,9 +61,9 @@ public:
 public:
 	void loadFile(char * fname);
 public:
-	virtual float color(int id, float u, float v);
+	virtual vec3f * color(int id, float u, float v);
 	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o);
-	virtual float emit(int id, float u, float v);
+	virtual vec3f * emit(int id, float u, float v);
 public:
 	brdf_t material;
 	emit_t emission;
@@ -76,8 +76,8 @@ public:
 public:
 	void loadFile(char * sname, char * bname, int w, int h);
 public:
-	virtual float color(int id, float u, float v);
-	virtual float emit(int id, float u, float v);
+	virtual vec3f * color(int id, float u, float v);
+	virtual vec3f * emit(int id, float u, float v);
 public:
 	float len;
 	vec3f * pos;

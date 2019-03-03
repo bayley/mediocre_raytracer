@@ -100,6 +100,10 @@ vec3f * mul(vec3f * v, float c) {
 	return new vec3f(c * v->x, c * v->y, c * v->z);
 }
 
+vec3f * mul(vec3f * u, vec3f * v) {
+	return new vec3f(u->x * v->x, u->y * v->y, u->z * v->z);
+}
+
 vec3f * add(vec3f * u, vec3f * v) {
 	return new vec3f(u->x + v->x, u->y + v->y, u->z + v->z);
 }

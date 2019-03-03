@@ -80,7 +80,7 @@ vec3f * RTScene::hitN() {
 	return result;
 }
 
-float RTScene::color(int id, int prim, float u, float v) {
+vec3f * RTScene::color(int id, int prim, float u, float v) {
 	return obs[id]->color(prim, u, v);
 }
 
@@ -88,7 +88,7 @@ float RTScene::reflect(int id, float theta_i, float phi_i, float theta_o, float 
 	return obs[id]->reflect(theta_i, phi_i, theta_o, phi_o);
 }
 
-float RTScene::emit(int id, int prim, float u, float v) {
+vec3f * RTScene::emit(int id, int prim, float u, float v) {
 	return obs[id]->emit(prim, u, v);
 }
 
@@ -135,15 +135,15 @@ void RTTriangleMesh::loadFile(char * fname) {
   fclose(in);
 }
 
-float RTTriangleMesh::color(int id, float u, float v) {
-	return 1.f;
+vec3f * RTTriangleMesh::color(int id, float u, float v) {
+	return new vec3f(1.f, 1.f, 1.f);
 }
 
 float RTTriangleMesh::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
 	return material(theta_i, phi_i, theta_o, phi_o);
 }
 
-float RTTriangleMesh::emit(int id, float u, float v) {
+vec3f * RTTriangleMesh::emit(int id, float u, float v) {
 	return emission(id, u, v);
 }
 
@@ -214,37 +214,33 @@ void RTSkyBox::loadFile(char * sname, char * bname, int w, int h) {
 	rtcAttachGeometryByID(*scene, geom, id);
 }
 
-float RTSkyBox::color(int id, float u, float v) {
+vec3f * RTSkyBox::color(int id, float u, float v) {
 	if (id == 8 || id == 9) {
 		v = 1.f - v;
 		if (id == 9) {u = 1.f - u; v = 1.f - v;}
 		int p = (int)(u*texw); 
 		int q = (int)(v*texh);
-		float raw = 0.2 * b_red[q * texw + p] + 0.7 * b_green[q * texw + p] + 0.1 * b_blue[q * texw + p];
-		return raw / 255.f;
+		return new vec3f((float)b_red[q * texw + p] / 255.f, (float)b_green[q * texw + p] / 255.f, (float)b_blue[q * texw + p] / 255.f);
 	}
-	return 0.0f;
+	return new vec3f(0.f, 0.f, 0.f);
 }
 
-float RTSkyBox::emit(int id, float u, float v) {
+vec3f * RTSkyBox::emit(int id, float u, float v) {
 	v = 1.f - v;
 	if (id % 2 == 1) {u = 1.f - u; v = 1.f - v;}
 
-	float raw = 0.f;
 	if (id <= 7) {
 		int h_offs = (id / 2) * (texw / 4);
 		int p = (int)(u*texw / 4 + h_offs);
 		int q = (int)(v*texh);
-		raw = 0.2 * s_red[q * texw + p] + 0.7 * s_green[q * texw + p] + 0.1 * s_blue[q * texw + p];
+		return new vec3f((float)s_red[q * texw + p] / 255.f, (float)s_green[q * texw + p] / 255.f, (float)s_blue[q * texw + p] / 255.f);
 	}
 
 	if (id == 8 || id == 9) {
-		return 0.f;
+		return new vec3f(0.f, 0.f, 0.f);
 	}
 
 	if (id == 10 || id == 11) {
-		raw = 0.5f;
+		return new vec3f(.5f, .5f, .5f);
 	}
-
-	return raw / 255.f;
 }

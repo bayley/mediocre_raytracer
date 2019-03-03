@@ -60,6 +60,7 @@ private:
 //utility functions
 matrix3f * rotation(float theta, int axis);
 vec3f * mul(vec3f * v, float c);
+vec3f * mul(vec3f * u, vec3f * v);
 vec3f * add(vec3f * u, vec3f * v);
 vec3f * sub(vec3f * u, vec3f * v);
 
