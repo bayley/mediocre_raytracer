@@ -171,40 +171,42 @@ void RTSkyBox::loadFile(char * fname, int w, int h) {
   vertices[7].x = l2 + pos->x; vertices[7].y = l2 + pos->y; vertices[7].z = l2 + pos->z;
 
 	int tri = 0;
+
 	// left side
-	triangles[tri].v0 = 0; triangles[tri].v1 = 1; triangles[tri].v2 = 2; tri++;
-  triangles[tri].v0 = 1; triangles[tri].v1 = 3; triangles[tri].v2 = 2; tri++;
+	triangles[tri].v0 = 2; triangles[tri].v1 = 1; triangles[tri].v2 = 0; tri++;
+  triangles[tri].v0 = 2; triangles[tri].v1 = 3; triangles[tri].v2 = 1; tri++;
 
   // right side
-  triangles[tri].v0 = 4; triangles[tri].v1 = 6; triangles[tri].v2 = 5; tri++;
-  triangles[tri].v0 = 5; triangles[tri].v1 = 6; triangles[tri].v2 = 7; tri++;
+  triangles[tri].v0 = 5; triangles[tri].v1 = 6; triangles[tri].v2 = 4; tri++;
+  triangles[tri].v0 = 7; triangles[tri].v1 = 6; triangles[tri].v2 = 5; tri++;
 
   // bottom side
-  triangles[tri].v0 = 0; triangles[tri].v1 = 4; triangles[tri].v2 = 1; tri++;
-  triangles[tri].v0 = 1; triangles[tri].v1 = 4; triangles[tri].v2 = 5; tri++;
+  triangles[tri].v0 = 1; triangles[tri].v1 = 4; triangles[tri].v2 = 0; tri++;
+  triangles[tri].v0 = 5; triangles[tri].v1 = 4; triangles[tri].v2 = 1; tri++;
 
   // top side
-  triangles[tri].v0 = 2; triangles[tri].v1 = 3; triangles[tri].v2 = 6; tri++;
-  triangles[tri].v0 = 3; triangles[tri].v1 = 7; triangles[tri].v2 = 6; tri++;
+  triangles[tri].v0 = 6; triangles[tri].v1 = 3; triangles[tri].v2 = 2; tri++;
+  triangles[tri].v0 = 6; triangles[tri].v1 = 7; triangles[tri].v2 = 3; tri++;
 
   // front side
-  triangles[tri].v0 = 0; triangles[tri].v1 = 2; triangles[tri].v2 = 4; tri++;
-  triangles[tri].v0 = 2; triangles[tri].v1 = 6; triangles[tri].v2 = 4; tri++;
+  triangles[tri].v0 = 4; triangles[tri].v1 = 2; triangles[tri].v2 = 0; tri++;
+  triangles[tri].v0 = 4; triangles[tri].v1 = 6; triangles[tri].v2 = 2; tri++;
 
   // back side
-  triangles[tri].v0 = 1; triangles[tri].v1 = 5; triangles[tri].v2 = 3; tri++;
-  triangles[tri].v0 = 3; triangles[tri].v1 = 5; triangles[tri].v2 = 7; tri++;
+  triangles[tri].v0 = 3; triangles[tri].v1 = 5; triangles[tri].v2 = 1; tri++;
+  triangles[tri].v0 = 7; triangles[tri].v1 = 5; triangles[tri].v2 = 3; tri++;
 
 	rtcCommitGeometry(geom);
 	rtcAttachGeometryByID(*scene, geom, id);
 }
 
 float RTSkyBox::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
-	return 0.f;
+	return 0.0f;
 }
 
 float RTSkyBox::emit(int id, float u, float v) {
 	int p = (int)(u*texw);
 	int q = (int)(v*texh);
-	return 0.3f * (float)green[q * texw + p] / 255.f;
+	float raw = 0.2 * red[q * texw + p] + 0.7 * green[q * texw + p] + 0.1 * blue[q * texw + p];
+	return 0.5f * raw / 255.f;
 }
