@@ -55,9 +55,26 @@ vec3f * Camera::lookat(int x, int y) {
 	return result;
 }
 
+void Camera::move(vec3f * e) {
+	update(e->x, e->y, e->z, dir->x, dir->y, dir->z, fov, width, height);
+}
+
+void Camera::point(vec3f * d) {
+	update(eye->x, eye->y, eye->z, d->x, d->y, d->z, fov, width, height);
+}
+
+void Camera::zoom(float theta) {
+	update(eye->x, eye->y, eye->z, dir->x, dir->y, dir->z, theta, width, height);
+}
+
+void Camera::resize(int w, int h) {
+	update(eye->x, eye->y, eye->z, dir->x, dir->y, dir->z, fov, w, h);
+}
+
 void Camera::update(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h) {
 	eye = new vec3f(ex, ey, ez);
 	dir = new vec3f(dx, dy, dz);
+	fov = theta;
 
 	dir->normalize();
 	float dist2 = sqrtf(dir->x * dir->x + dir->y * dir->y);

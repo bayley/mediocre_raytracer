@@ -1,6 +1,7 @@
 #ifndef __GEOM_H
 #define __GEOM_H
 
+#include <embree3/rtcore.h>
 #include <math.h>
 
 class matrix3f;
@@ -41,11 +42,17 @@ public:
 	Camera(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h);
 public:
 	vec3f * lookat(int x, int y);
+public:
+	void move(vec3f * e);
+	void point(vec3f * d);
+	void zoom(float theta);
+	void resize(int w, int h);
 private:
 	void update(float ex, float ey, float ez, float dx, float dy, float dz, float theta, int w, int h);
 private:
 	vec3f *eye, *dir;
 	vec3f *u, *v;
+	float fov;
 	int width, height;
 };
 

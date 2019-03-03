@@ -15,10 +15,6 @@ inline void setRayDir(RTCRayHit * rh, vec3f * dir) {
 	rh->ray.dir_z = dir->z;
 }
 
-inline vec3f * eval_ray(RTCRay ray, float t) {
-	return new vec3f(ray.org_x + t * ray.dir_x, ray.org_y + t * ray.dir_y, ray.org_z + t * ray.dir_z);
-}
-
 int main(int argc, char** argv) {
 	//create a new scene
 	RTScene scene;
@@ -34,9 +30,6 @@ int main(int argc, char** argv) {
 
 	//commit scene and build BVH
 	scene.commit();
-
-	//time not used, for now
-	scene.rh.ray.time = 0.f;
 
 	//output file
 	BMPC output(1000, 1000);
@@ -71,9 +64,8 @@ int main(int argc, char** argv) {
 			}
 
 			//hit point, normal vector
-			vec3f * hit_p = eval_ray(scene.rh.ray, scene.rh.ray.tfar);
-			vec3f * hit_n = new vec3f(scene.rh.hit.Ng_x, scene.rh.hit.Ng_y, scene.rh.hit.Ng_z);
-			hit_n->normalize();
+			vec3f * hit_p = scene.hitP();
+			vec3f * hit_n = scene.hitN();
 
 			//simple cosine shading
 			vec3f * to_lamp = sub(lamp, hit_p);
