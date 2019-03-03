@@ -1,7 +1,7 @@
 CXX=g++
 CPPFLAGS=-O3 -I.
-DEPS = geom.h bmp.h bmpc.h RTObject.h
-OBJ = main.o bmp.o geom.o bmpc.o RTObject.o
+DEPS = geom.h bmp.h bmpc.h brdf.h RTObject.h
+OBJ = main.o bmp.o geom.o bmpc.o brdf.o RTObject.o
 LIBS = -lm -lembree3
 
 %.o: %.c $(DEPS)

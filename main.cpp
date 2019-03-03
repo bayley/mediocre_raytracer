@@ -7,6 +7,7 @@
 
 #include "geom.h"
 #include "bmpc.h"
+#include "brdf.h"
 #include "RTObject.h"
 
 inline void setRayDir(RTCRayHit * rh, vec3f * dir) {
@@ -22,17 +23,19 @@ inline void setRayOrg(RTCRayHit * rh, vec3f * org) {
 }
 
 int main(int argc, char** argv) {
-	//create a new scene
-	RTScene scene;
-
-	//load a mesh into the scene
+	//print a message and quit if no args
 	if (argc < 2) {
 		printf("Please give a file name\n");
 		return -1;
 	}
-	RTTriangleMesh * teapot_m = new RTTriangleMesh(&scene);
-	teapot_m->loadFile(argv[1]);
-	printf("Loaded %s with %d vertices and %d faces\n", argv[1], teapot_m->num_vertices, teapot_m->num_triangles);
+
+	//create a new scene
+	RTScene scene;
+
+	//load a mesh into the scene
+	RTTriangleMesh * teapot = new RTTriangleMesh(&scene);
+	teapot->loadFile(argv[1]);
+	printf("Loaded %s with %d vertices and %d faces\n", argv[1], teapot->num_vertices, teapot->num_triangles);
 
 	//commit scene and build BVH
 	scene.commit();
@@ -82,6 +85,7 @@ int main(int argc, char** argv) {
 			float lambert = hit_n->dot(to_lamp);
 			if (lambert < 0.f) lambert = 0.f; //backside
 			if (isinf(scene.rh.ray.tfar)) lambert = 0.f;
+
 			unsigned char shade = (unsigned char)(lambert * 255.f);
 			
 			//write output color
