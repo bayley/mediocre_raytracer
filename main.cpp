@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 			//do GI
 			float hit_theta, hit_phi;
 			vec3f * g_illum = new vec3f(0.f, 0.f, 0.f);	
-			int n_samples = 128;
+			int n_samples = 1000;
 
 			for (int sample = 0; sample < n_samples; sample++) {
 				hit_theta = rangle(); hit_phi = rangle();
