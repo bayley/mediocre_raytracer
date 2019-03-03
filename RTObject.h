@@ -29,7 +29,8 @@ public:
 	vec3f * hitP();
 	vec3f * hitN();
 public:
-	float reflect(int id, int prim, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
+	float color(int id, int prim, float u, float v);
+	float reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o);
 	float emit(int id, int prim, float u, float v);
 public:
 	RTCDevice device;
@@ -49,7 +50,8 @@ public:
 	RTCGeometry geom;
 	int id;
 public:
-	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {return 1.f;}
+	virtual float color(int id, float u, float v) {return 0.f;}
+	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o) {return 1.f;}
 	virtual float emit(int id, float u, float v) {return 0.f;}
 };
 
@@ -59,7 +61,8 @@ public:
 public:
 	void loadFile(char * fname);
 public:
-	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
+	virtual float color(int id, float u, float v);
+	virtual float reflect(float theta_i, float phi_i, float theta_o, float phi_o);
 	virtual float emit(int id, float u, float v);
 public:
 	brdf_t material;
@@ -73,7 +76,7 @@ public:
 public:
 	void loadFile(char * sname, char * bname, int w, int h);
 public:
-	virtual float reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o);
+	virtual float color(int id, float u, float v);
 	virtual float emit(int id, float u, float v);
 public:
 	float len;

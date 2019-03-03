@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
 			//materials are stored in the scene
 			//works OK for one-mesh one-material, not so much for one-face one-material
 			float shade = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) +
-										cos_n * scene.reflect(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v,
-																				  0.f, 0.f, 0.f, 0.f);
+										cos_n * scene.color(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v) * 
+														scene.reflect(scene.rh.hit.geomID, 0.f, 0.f, 0.f, 0.f);
 
 			unsigned char color = (unsigned char)(shade * 255.f);
 			

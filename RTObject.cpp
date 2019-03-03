@@ -80,8 +80,12 @@ vec3f * RTScene::hitN() {
 	return result;
 }
 
-float RTScene::reflect(int id, int prim, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
-	return obs[id]->reflect(prim, u, v, theta_i, phi_i, theta_o, phi_o);
+float RTScene::color(int id, int prim, float u, float v) {
+	return obs[id]->color(prim, u, v);
+}
+
+float RTScene::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
+	return obs[id]->reflect(theta_i, phi_i, theta_o, phi_o);
 }
 
 float RTScene::emit(int id, int prim, float u, float v) {
@@ -131,7 +135,11 @@ void RTTriangleMesh::loadFile(char * fname) {
   fclose(in);
 }
 
-float RTTriangleMesh::reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
+float RTTriangleMesh::color(int id, float u, float v) {
+	return 1.f;
+}
+
+float RTTriangleMesh::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
 	return material(theta_i, phi_i, theta_o, phi_o);
 }
 
@@ -206,7 +214,7 @@ void RTSkyBox::loadFile(char * sname, char * bname, int w, int h) {
 	rtcAttachGeometryByID(*scene, geom, id);
 }
 
-float RTSkyBox::reflect(int id, float u, float v, float theta_i, float phi_i, float theta_o, float phi_o) {
+float RTSkyBox::color(int id, float u, float v) {
 	if (id == 8 || id == 9) {
 		v = 1.f - v;
 		if (id == 9) {u = 1.f - u; v = 1.f - v;}
