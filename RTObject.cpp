@@ -84,8 +84,8 @@ vec3f * RTScene::color(int id, int prim, float u, float v) {
 	return obs[id]->color(prim, u, v);
 }
 
-float RTScene::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
-	return obs[id]->reflect(theta_i, phi_i, theta_o, phi_o);
+float RTScene::reflect(int id, int prim, float theta_i, float phi_i, float theta_o, float phi_o) {
+	return obs[id]->reflect(prim, theta_i, phi_i, theta_o, phi_o);
 }
 
 vec3f * RTScene::emit(int id, int prim, float u, float v) {
@@ -139,7 +139,7 @@ vec3f * RTTriangleMesh::color(int id, float u, float v) {
 	return new vec3f(1.f, 1.f, 1.f);
 }
 
-float RTTriangleMesh::reflect(float theta_i, float phi_i, float theta_o, float phi_o) {
+float RTTriangleMesh::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
 	return material(theta_i, phi_i, theta_o, phi_o);
 }
 
@@ -228,6 +228,11 @@ vec3f * RTSkyBox::color(int id, float u, float v) {
 		return new vec3f((float)b_red[q * texw + p] / 255.f, (float)b_green[q * texw + p] / 255.f, (float)b_blue[q * texw + p] / 255.f);
 	}
 	return new vec3f(0.f, 0.f, 0.f);
+}
+
+float RTSkyBox::reflect(int id, float theta_i, float phi_i, float theta_o, float phi_o) {
+	if (id == 8 || id == 9) return 1.f;
+	return 0.f;
 }
 
 vec3f * RTSkyBox::emit(int id, float u, float v) {

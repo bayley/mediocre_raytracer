@@ -132,6 +132,9 @@ int main(int argc, char** argv) {
 				float backside = last_dir->dot(hit_n) > 0.f ? -1.f : 1.f;
 				vec3f * out_dir = random_dir(hit_n, backside);
 				float cos_g = backside * hit_n->dot(out_dir);
+				refl = scene.reflect(last_id, last_prim, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
+
+				if (refl == 0.f) continue; //trick to speed up the skybox
 
 				//one GI bounce
 				scene.resetRH();
@@ -145,7 +148,6 @@ int main(int argc, char** argv) {
 				}
 				
 				//add the emission from the new hit
-				refl = scene.reflect(last_id, 0.f, 0.f, 0.f, 0.f); //TODO: use real angles!
 				emission = scene.emit(scene.rh.hit.geomID, scene.rh.hit.primID, scene.rh.hit.u, scene.rh.hit.v);
 				g_illum = add(g_illum, mul(mul(last_color, cos_g * refl), emission));
 			}
