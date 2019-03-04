@@ -14,11 +14,14 @@ class RTScene {
 public:
 	RTScene();
 public:
+	int set_hdri(char * fname, int w, int h, float r);
+	int add_mesh(char * fname, vec3f * c, brdf_t b);
+public:
 	int record_obj(RTObject * obj);
 	void commit();
 public:
-	void resetRH();
 	void resetR();
+	void resetRH();
 	void cleanup();
 public:
 	void move(float x, float y, float z);
