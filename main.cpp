@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
 
 	//load a skybox
 	RTSkyBox * sky = new RTSkyBox(&scene, 30.f, new vec3f(0.f, 0.f, 0.f));
-	sky->loadFile((char*)"bliss.bmp", (char*)"grass.bmp", (char*)"cloud.bmp", 1440, 1440);
+	sky->loadFile((char*)"textures/bliss.bmp", (char*)"textures/grass.bmp", (char*)"textures/cloud.bmp", 1440, 1440);
 
 	//load a mesh into the scene
 	RTTriangleMesh * teapot = new RTTriangleMesh(&scene, brdf_lambert, emit_black);
